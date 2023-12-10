@@ -82,17 +82,14 @@ map[start[0]][start[1]] = get_piece_type(start[0], start[1])
 
 for i in range(len(map)):
     norths = 0
-    souths = 0
     for j in range(len(map[i])):
         place = map[i][j]
         if (i,j) in encountered_places:
             pipe_directions = pipe_types[place]
             if "n" in pipe_directions:
                 norths += 1
-            if "s" in pipe_directions:
-                souths += 1
             continue
-        if norths % 2 == 0 and souths % 2 == 0:
+        if norths % 2 == 0:
             map[i][j] = "O"
         else:
             map[i][j] = "I"
