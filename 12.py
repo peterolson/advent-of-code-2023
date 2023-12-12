@@ -13,7 +13,7 @@ for line in lines:
 
 
 def get_arrangements(springs, groups, depth=0):
-    prefix = "    " * depth
+    # prefix = "    " * depth
     # print(prefix, springs, groups)
     if len(groups) == 0:
         if "#" in springs:
@@ -93,15 +93,22 @@ def get_arrangements_2(record):
 
 
 total_1 = 0
-total_2 = 0
 for record in records:
     count_1 = get_arrangements(*record)
-    count_2 = get_arrangements_2(record)
-    if count_1 != count_2:
-        print(record, count_1, count_2)
     total_1 += count_1
-    total_2 += count_2
-print(total_1, total_2)
+print(total_1)
+
+total_1 = 0
+i = 0
+for record in records:
+    print(i, record, total_1)
+    i += 1
+    springs, groups = record
+    springs = ((springs + "?") * 5)[:-1]
+    groups = groups * 5
+    count_1 = get_arrangements(springs, groups)
+    total_1 += count_1
+print(total_1)
 
 # arrangement_counts = []
 # for i, record in enumerate(records):
