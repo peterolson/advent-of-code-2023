@@ -1,5 +1,3 @@
-from itertools import combinations
-
 with open("input/12.txt", "r") as f:
     lines = f.readlines()
 
@@ -12,13 +10,10 @@ for line in lines:
     records.append((springs, groups))
 
 
-def get_arrangements(springs, groups, depth=0):
-    # prefix = "    " * depth
-    # print(prefix, springs, groups)
+def get_arrangements(springs, groups):
     if len(groups) == 0:
         if "#" in springs:
             return 0
-        # print(prefix + "yay!")
         return 1
     broken = springs.count("#")
     remaining_sum = sum(groups)
@@ -45,7 +40,6 @@ def get_arrangements(springs, groups, depth=0):
     total_count = 0
     while i + next_group <= len(original_region_to_fill):
         chunk = region_to_fill[i : i + next_group]
-        # print(prefix, region_to_fill, chunk, i)
         if "." in chunk:
             i += 1
             continue
@@ -54,81 +48,56 @@ def get_arrangements(springs, groups, depth=0):
             continue
         if "#" in region_to_fill[0:i]:
             break
-        total_count += get_arrangements(
-            springs[i + next_group + 1 :], groups_tail, depth + 1
-        )
+        total_count += get_arrangements(springs[i + next_group + 1 :], groups_tail)
         if chunk[0] == "#":
             break
         i += 1
     return total_count
 
 
-def get_arrangements_2(record):
-    springs, groups = record
-    total_damaged = sum(groups)
-    unknown = springs.count("?")
-    known_damaged = springs.count("#")
-    missing_damaged = total_damaged - known_damaged
-    arrangements = combinations(range(unknown), missing_damaged)
-    valid_arrangements = 0
-    for combination in arrangements:
-        # replace ? with combination
-        arrangement = ""
-        i = 0
-        for spring in springs:
-            if spring == "?":
-                if i in combination:
-                    arrangement += "#"
-                else:
-                    arrangement += "."
-                i += 1
-            else:
-                arrangement += spring
-        arrangement_groups = [
-            len(group) for group in arrangement.replace(".", " ").strip().split()
-        ]
-        if arrangement_groups == groups:
-            valid_arrangements += 1
-    return valid_arrangements
+def get_arrangements_split(springs, groups):
+    if len(springs) < 6 or len(groups) < 2:
+        count = get_arrangements(springs, groups)
+        return count
+    middle = len(groups) // 2
+    middle_group = groups[middle]
+    left_groups = groups[:middle]
+    right_groups = groups[middle + 1 :]
+    start = sum(left_groups) + len(left_groups)
+    end = len(springs) - sum(right_groups) - len(right_groups)
+
+    i = start
+    total_count = 0
+    while i + middle_group <= end:
+        slice = springs[i : i + middle_group]
+        if "." in slice:
+            i += 1
+            continue
+        if i > 0 and springs[i - 1] == "#":
+            i += 1
+            continue
+        if i + middle_group < len(springs) and springs[i + middle_group] == "#":
+            i += 1
+            continue
+        left_count = get_arrangements_split(springs[: i - 1], left_groups)
+        if left_count == 0:
+            i += 1
+            continue
+        right_count = get_arrangements_split(
+            springs[i + middle_group + 1 :], right_groups
+        )
+        total_count += left_count * right_count
+        i += 1
+    return total_count
 
 
-total_1 = 0
-for record in records:
-    count_1 = get_arrangements(*record)
-    total_1 += count_1
-print(total_1)
+counts = [get_arrangements_split(springs, groups) for springs, groups in records]
+print(sum(counts))
 
-total_1 = 0
-i = 0
-for record in records:
-    print(i, record, total_1)
-    i += 1
-    springs, groups = record
-    springs = ((springs + "?") * 5)[:-1]
-    groups = groups * 5
-    count_1 = get_arrangements(springs, groups)
-    total_1 += count_1
-print(total_1)
-
-# arrangement_counts = []
-# for i, record in enumerate(records):
-#     springs, groups = record
-#     counts = get_arrangements(springs, groups, 0, 0)
-#     arrangement_counts.append(counts)
-
-# print(sum(arrangement_counts))
-
-# arrangement_counts = []
-# for i, record in enumerate(records):
-#     springs, groups = record
-#     counts = get_arrangements(springs, groups, 0, 0)
-#     double_counts = get_arrangements(springs + "?" + springs, groups * 2, 0, 0)
-#     ratio = double_counts / counts
-#     total = counts * ratio ** 4
-#     triple_counts = get_arrangements(springs + "?" + springs + "?" + springs, groups * 3, 0, 0)
-#     ratio_2 = triple_counts / counts
-#     total_2 = counts * ratio_2 ** 2
-#     print(i, counts, double_counts, triple_counts, ratio, ratio_2, total, total_2)
-
-#     # 0 23570904
-# print(sum(arrangement_counts))
+records = [(((springs + "?") * 5)[:-1], groups * 5) for springs, groups in records]
+total = 0
+for i, record in enumerate(records):
+    count = get_arrangements_split(*record)
+    print(i, count)
+    total += count
+print(total)
