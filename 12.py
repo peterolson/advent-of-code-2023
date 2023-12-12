@@ -98,6 +98,5 @@ records = [(((springs + "?") * 5)[:-1], groups * 5) for springs, groups in recor
 total = 0
 for i, record in enumerate(records):
     count = get_arrangements_split(*record)
-    print(i, count)
     total += count
 print(total)
