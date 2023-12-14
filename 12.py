@@ -9,58 +9,94 @@ for line in lines:
     groups = [int(group) for group in groups.split(",")]
     records.append((springs, groups))
 
-def get_chunk_arrangements(chunk : str, groups : list[int], group_start : int, dict : dict[int, int]):
-    if len(chunk) == 0:
-        print("end", group_start)
-        dict[group_start] = dict.get(group_start, 0) + 1
-        return
+
+def get_arrangements(springs, groups):
+    if len(groups) == 0:
+        if "#" in springs:
+            return 0
+        return 1
+    broken = springs.count("#")
+    remaining_sum = sum(groups)
+    if broken > remaining_sum:
+        return 0
+    unknown = springs.count("?")
+    if broken + unknown < remaining_sum:
+        return 0
+
     next_group = groups[0]
+    groups_tail = groups[1:]
+    min_tail_length = sum(groups_tail) + len(groups_tail)
+    region_to_fill = springs[:-min_tail_length] if len(groups_tail) > 0 else springs
+    original_region_to_fill = region_to_fill
+    while (
+        min_tail_length > 0
+        and springs[-min_tail_length] == "#"
+        and region_to_fill[-1] == "#"
+    ):
+        region_to_fill += "#"
+        min_tail_length -= 1
+
     i = 0
-    while i + next_group <= len(chunk):
-        is_valid = i + next_group == len(chunk) or chunk[i + next_group] == "?"
-        print(chunk, i, next_group, is_valid)
-        if is_valid:
-            get_chunk_arrangements(chunk[i + next_group + 1:], groups, group_start + 1, dict)
+    total_count = 0
+    while i + next_group <= len(original_region_to_fill):
+        chunk = region_to_fill[i : i + next_group]
+        if "." in chunk:
+            i += 1
+            continue
+        if i + next_group < len(springs) and springs[i + next_group] == "#":
+            i += 1
+            continue
+        if "#" in region_to_fill[0:i]:
+            break
+        total_count += get_arrangements(springs[i + next_group + 1 :], groups_tail)
+        if chunk[0] == "#":
+            break
         i += 1
-    dict[group_start] = dict.get(group_start, 0) + 1
-            
-def get_arrangements(record):
-    springs, groups = record
-    chunks = [chunk for chunk in springs.split(".") if len(chunk) > 0]
-    queue = [(chunks[0], 0, {}, 1)]
-    grand_total = 0
-    while len(queue) > 0:
-        print(queue)
-        chunk, i, dict, total = queue.pop(0)
-        get_chunk_arrangements(chunk, groups, i, dict)
-        print(dict)
-        for group_start, count in dict.items():
-            if group_start == len(groups) and i == len(chunks) - 1:
-                grand_total += total * count
-            elif i < len(chunks) - 1:
-                queue.append((chunks[i + 1], group_start, {}, total * count))
+    return total_count
 
-get_arrangements(records[0])
 
-# arrangement_counts = []
-# for i, record in enumerate(records):
-#     springs, groups = record
-#     counts = get_arrangements(springs, groups, 0, 0)
-#     arrangement_counts.append(counts)
+def get_arrangements_split(springs, groups):
+    if len(springs) < 6 or len(groups) < 2:
+        count = get_arrangements(springs, groups)
+        return count
+    middle = len(groups) // 2
+    middle_group = groups[middle]
+    left_groups = groups[:middle]
+    right_groups = groups[middle + 1 :]
+    start = sum(left_groups) + len(left_groups)
+    end = len(springs) - sum(right_groups) - len(right_groups)
 
-# print(sum(arrangement_counts))
+    i = start
+    total_count = 0
+    while i + middle_group <= end:
+        slice = springs[i : i + middle_group]
+        if "." in slice:
+            i += 1
+            continue
+        if i > 0 and springs[i - 1] == "#":
+            i += 1
+            continue
+        if i + middle_group < len(springs) and springs[i + middle_group] == "#":
+            i += 1
+            continue
+        left_count = get_arrangements_split(springs[: i - 1], left_groups)
+        if left_count == 0:
+            i += 1
+            continue
+        right_count = get_arrangements_split(
+            springs[i + middle_group + 1 :], right_groups
+        )
+        total_count += left_count * right_count
+        i += 1
+    return total_count
 
-# arrangement_counts = []
-# for i, record in enumerate(records):
-#     springs, groups = record
-#     counts = get_arrangements(springs, groups, 0, 0)
-#     double_counts = get_arrangements(springs + "?" + springs, groups * 2, 0, 0)
-#     ratio = double_counts / counts
-#     total = counts * ratio ** 4
-#     triple_counts = get_arrangements(springs + "?" + springs + "?" + springs, groups * 3, 0, 0)
-#     ratio_2 = triple_counts / counts
-#     total_2 = counts * ratio_2 ** 2
-#     print(i, counts, double_counts, triple_counts, ratio, ratio_2, total, total_2)
-        
-#     # 0 23570904
-# print(sum(arrangement_counts))
+
+counts = [get_arrangements_split(springs, groups) for springs, groups in records]
+print(sum(counts))
+
+records = [(((springs + "?") * 5)[:-1], groups * 5) for springs, groups in records]
+total = 0
+for i, record in enumerate(records):
+    count = get_arrangements_split(*record)
+    total += count
+print(total)
