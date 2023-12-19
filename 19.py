@@ -1,6 +1,7 @@
 with open("input/19.txt", "r") as f:
     lines = [line.strip() for line in f.readlines()]
-    
+
+
 def parse_workflow(line):
     name, rule = line.split("{")
     rules = rule[:-1].split(",")
@@ -16,12 +17,14 @@ def parse_workflow(line):
         parsed_rules.append((field, operator, value, target))
     return name, parsed_rules
 
+
 def parse_part(line):
     stripped = line[1:-1]
     parts = stripped.split(",")
     values = [int(part.split("=")[1]) for part in parts]
-    [x,m,a,s] = values
+    [x, m, a, s] = values
     return {"x": x, "m": m, "a": a, "s": s}
+
 
 workflows = {}
 parts = []
@@ -35,7 +38,8 @@ for line in lines:
     else:
         name, workflow = parse_workflow(line)
         workflows[name] = workflow
-        
+
+
 def execute_workflow(part, workflow):
     for rule in workflow:
         if isinstance(rule, str):
@@ -55,97 +59,65 @@ def execute_workflow(part, workflow):
                 return target
             return execute_workflow(part, workflows[target])
 
-accepted_parts = [part for part in parts if execute_workflow(part, workflows["in"]) == "A"]
-total_rating = sum([part["x"] + part["m"] + part["a"] + part["s"] for part in accepted_parts])
+
+accepted_parts = [
+    part for part in parts if execute_workflow(part, workflows["in"]) == "A"
+]
+total_rating = sum(
+    [part["x"] + part["m"] + part["a"] + part["s"] for part in accepted_parts]
+)
 print(total_rating)
 
+
 def get_ranges(workflow, range):
-    accepted_ranges = []
+    all_ranges = []
     current_range = range
     for rule in workflow:
         if isinstance(rule, str):
-            if rule == "A":
-                accepted_ranges.append(current_range)
+            if rule in workflows:
+                all_ranges += get_ranges(workflows[rule], current_range)
                 continue
-            elif rule == "R":
+            elif rule == "A":
+                all_ranges.append(current_range)
                 continue
-            elif rule in workflows:
-                accepted_ranges += get_ranges(workflows[rule], current_range)
-                continue
+            continue
         field, operator, value, target = rule
         lower, upper = current_range[field]
+        current_lower, current_upper = current_range[field]
         if operator == "<":
             upper = min(value - 1, upper)
+            current_lower = max(value, current_lower)
         elif operator == ">":
             lower = max(value + 1, lower)
+            current_upper = min(value, current_upper)
         new_range = {**current_range, field: [lower, upper]}
-        if target == "A":
-            accepted_ranges.append(new_range)
-        elif target == "R":
-            continue
-        elif target in workflows:
-            accepted_ranges += get_ranges(workflows[target], new_range)
-                
-    return accepted_ranges
+        current_range = {**current_range, field: [current_lower, current_upper]}
+        if target in workflows:
+            all_ranges += get_ranges(workflows[target], new_range)
+        elif target == "A":
+            all_ranges.append(new_range)
 
-def get_intersection(ranges):
-    intersection = {}
-    for range in ranges:
-        for field in ["x", "m", "a", "s"]:
-            if field not in intersection:
-                intersection[field] = range[field]
-            else:
-                lower, upper = intersection[field]
-                new_lower, new_upper = range[field]
-                intersection[field] = [max(lower, new_lower), min(upper, new_upper)]
-    total_possibilities = 1
-    for field in ["x", "m", "a", "s"]:
-        lower, upper = intersection[field]
+    return all_ranges
+
+
+def get_size(range):
+    size = 1
+    for key in range:
+        lower, upper = range[key]
         if lower > upper:
             return 0
-        total_possibilities *= (upper - lower + 1)
-    return total_possibilities
+        size *= upper - lower + 1
+    return size
 
-def is_entailed_by(range1, range2):
-    for field in ["x", "m", "a", "s"]:
-        lower1, upper1 = range1[field]
-        lower2, upper2 = range2[field]
-        if lower1 < lower2 or upper1 > upper2:
-            return False
-    return True
 
-def deduplicate(list_of_sets : list[set]):
-    encountered = set()
-    deduplicated = []
-    for s in list_of_sets:
-        key = tuple(sorted(s))
-        if key not in encountered:
-            encountered.add(key)
-            deduplicated.append(s)
-    return deduplicated
-    
-ranges = get_ranges(workflows["in"], {"x": [1, 4000], "m": [1, 4000], "a": [1, 4000], "s": [1, 4000]})
+ranges = get_ranges(
+    workflows["in"], {"x": [1, 4000], "m": [1, 4000], "a": [1, 4000], "s": [1, 4000]}
+)
 
-current_iteration = [{i} for i in range(len(ranges))]
-sign = 1
-sum = 0
-while len(current_iteration) > 0:
-    non_empty = []
-    for group in current_iteration:
-        intersection = get_intersection([ranges[i] for i in group])
-        if intersection == 0:
-            continue
-        sum += sign * intersection
-        non_empty.append(group)
-    next_iteration = []
-    for group in non_empty:
-        group_max = max(group)
-        next_items = [i for i in range(len(ranges)) if i not in group]
-        for item in next_items:
-            next_iteration.append(group.union({item}))
-    next_iteration = deduplicate(next_iteration)
-    # remove duplicates
-    print(next_iteration)
-    sign *= -1
-    current_iteration = next_iteration
-    print(len(current_iteration), sum)
+sets = [{i} for i in range(len(ranges))]
+
+total = 0
+for range in ranges:
+    total += get_size(range)
+
+print(total)
