@@ -14,19 +14,15 @@ direction_pairs = {
     "LD": "F",
 }
 
-corner_pairs = {
-    "F7": ((-0.5, 0.5), (0.5, 0.5)),
-    "FL": ((-0.5, 0.5), (-0.5, -0.5)),
-    "FJ": ((-0.5, 0.5), (-0.5, 0.5)),
-    "7L": ((0.5, 0.5), (0.5, 0.5)),
-    "7J": ((0.5, 0.5), (0.5, -0.5)),
-    "7F": ((0.5, 0.5), (-0.5, 0.5)),
-    "LJ": ((-0.5, -0.5), (0.5, -0.5)),
-    "LF": ((-0.5, -0.5), (-0.5, 0.5)),
-    "L7": ((-0.5, -0.5), (0.5, 0.5)),
-    "JF": ((0.5, -0.5), (0.5, -0.5)),
-    "J7": ((0.5, -0.5), (0.5, 0.5)),
-    "JL": ((0.5, -0.5), (-0.5, -0.5)),
+starting_positions = {
+    ("F", "R"): (-0.5, 0.5),
+    ("F", "D"): (0.5, -0.5),
+    ("7", "D"): (0.5, 0.5),
+    ("7", "L"): (-0.5, -0.5),
+    ("L", "R"): (0.5, 0.5),
+    ("L", "U"): (-0.5, -0.5),
+    ("J", "L"): (0.5, -0.5),
+    ("J", "U"): (-0.5, 0.5),
 }
 
 
@@ -38,82 +34,52 @@ def parse_instruction(line):
 
 instructions = [parse_instruction(line) for line in lines]
 
-vertex = (0, 0)
-vertices = []
-for i, (direction, dist, color) in enumerate(instructions):
-    d = directions[direction]
-    next_direction, next_dist, next_color = instructions[(i + 1) % len(instructions)]
-    print(direction, next_direction, vertex)
-    corner_type = direction_pairs[direction + next_direction]
-    vertex = (vertex[0] + d[0] * dist, vertex[1] + d[1] * dist, corner_type)
-    vertices.append(vertex)
 
-print(vertices)
-
-# def intersect(pair1, pair2):
-#     x1, x2 = pair1
-#     x3, x4 = pair2
-#     if x3 <= x1 <= x4 or x1 <= x3 <= x2:
-#         return True
-#     return False
+def area(p):
+    return 0.5 * abs(sum(x0 * y1 - x1 * y0 for ((x0, y0), (x1, y1)) in segments(p)))
 
 
-# def make_pairs(xs):
-#     pairs = []
-#     i = 0
-#     while i < len(xs) - 1:
-#         pairs.append((xs[i], xs[i + 1]))
-#         i += 2
-#     return pairs
+def segments(p):
+    return zip(p, p[1:] + [p[0]])
 
 
-# ys = sorted(set([v[1] for v in vertices]), reverse=True)
-# prev_xs = []
-# prev_length = 0
-# prev_pairs = []
-# area = 0
-# for i, y in enumerate(ys[:-1]):
-#     xs = [v[0] for v in vertices if v[1] == y]
-#     carry_over = [x for x in prev_xs if x not in xs]
-#     new = [x for x in xs if x not in prev_xs]
-#     xs = sorted(set(carry_over + new))
-#     x_pairs = make_pairs(xs)
-#     intersecting_pairs = [
-#         [(pair, prev_pair) for prev_pair in prev_pairs if intersect(pair, prev_pair)]
-#         for pair in x_pairs
-#     ]
-#     # flatten intersecting_pairs
-#     intersecting_pairs = set([pair for pairs in intersecting_pairs for pair in pairs])
-#     expanded_intersecting_pairs = [
-#         (min(a[0], b[0]), max(a[1], b[1])) for a, b in intersecting_pairs
-#     ]
-#     current_intersecting_pairs = [pair[0] for pair in intersecting_pairs]
-#     non_intersecting_pairs = [
-#         pair for pair in x_pairs if pair not in current_intersecting_pairs
-#     ]
-#     current_line_length = sum(
-#         [x2 - x1 + 1 for x1, x2 in expanded_intersecting_pairs]
-#     ) + sum([x2 - x1 + 1 for x1, x2 in non_intersecting_pairs])
-#     length = sum([x2 - x1 + 1 for x1, x2 in x_pairs])
-#     height = abs(y - ys[i + 1]) - 1
-#     area += length * height
-#     if i == len(ys) - 2:
-#         area += length
-#     if i == 0:
-#         area += length
-#     else:
-#         area += current_line_length
-#     print(
-#         y,
-#         x_pairs,
-#         length,
-#         current_intersecting_pairs,
-#         non_intersecting_pairs,
-#         current_line_length,
-#         area,
-#     )
-#     prev_xs = xs
-#     prev_pairs = x_pairs
-#     prev_length = length
+def get_area(instructions):
+    vertex = (0, 0)
+    vertices = []
+    for i, instruction in enumerate(instructions):
+        direction = instruction[0]
+        dist = instruction[1]
+        d = directions[direction]
+        next_instruction = instructions[(i + 1) % len(instructions)]
+        next_direction = next_instruction[0]
+        corner_type = direction_pairs[direction + next_direction]
+        vertex = (
+            vertex[0] + d[0] * dist,
+            vertex[1] + d[1] * dist,
+            corner_type,
+            next_direction,
+        )
+        vertices.append(vertex)
 
-# print(area)
+    new_vertices = []
+    for i, (x1, y1, corner_type, next_direction) in enumerate(vertices):
+        dx, dy = starting_positions[(corner_type, next_direction)]
+        x = x1 + dx
+        y = y1 + dy
+        new_vertices.append((x, y))
+
+    return int(area(new_vertices))
+
+
+print(get_area(instructions))
+
+new_instructions = []
+for instruction in instructions:
+    direction, distance, color = instruction
+    hex_distance = color[:-1]
+    direction_code = int(color[-1])
+    direction = "RDLU"[direction_code]
+    distance = int(hex_distance, 16)
+    new_instructions.append((direction, distance))
+
+print(get_area(new_instructions))
