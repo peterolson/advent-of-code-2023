@@ -1,8 +1,9 @@
 with open("input/20.txt", "r") as f:
     lines = [line.strip() for line in f.readlines()]
-    
+
 modules = dict()
-    
+
+
 def parse_module(line):
     name, destinations = line.split(" -> ")
     destinations = destinations.split(", ")
@@ -15,12 +16,13 @@ def parse_module(line):
         name = name[1:]
     modules[name] = (name, type, destinations)
 
+
 for line in lines:
     parse_module(line)
-    
+
 module_states = {}
 
-for (name, type, destinations) in modules.values():
+for name, type, destinations in modules.values():
     if type == "flipflop":
         module_states[name] = False
     elif type == "conjunction":
@@ -30,8 +32,9 @@ for (name, type, destinations) in modules.values():
             state[m] = "low"
         module_states[name] = state
 
+
 def push_button():
-    global button_pushes     
+    global button_pushes
     signal_queue = [("broadcaster", "low", "button")]
     low_pulses = 0
     high_pulses = 0
@@ -66,6 +69,7 @@ def push_button():
             signal_queue.append((destination, signal, name))
     return low_pulses, high_pulses
 
+
 l = 0
 h = 0
 for i in range(1000):
@@ -74,22 +78,34 @@ for i in range(1000):
     h += high_pulses
 print(l * h)
 
-low_pulse_rates = {}
-high_pulse_rates = {}
 
-queue = [("broadcaster", 1, 0)]
-while len(queue) > 0:
-    name, low_pulse_rate, high_pulse_rate = queue.pop(0)
-    if low_pulse_rate == 0 and high_pulse_rate == 0:
-        continue
-    name, type, destinations = modules[name]
-    low_pulse_rates[name] = low_pulse_rates.get(name, 0)
-    high_pulse_rates[name] = high_pulse_rates.get(name, 0)
-    if type is None:
-        low_pulse_rates[name] += low_pulse_rate
-        high_pulse_rates[name] += high_pulse_rate
+def product(l):
+    p = 1
+    for i in l:
+        p *= i
+    return p
+
+
+def get_frequency(node, multiplier):
+    if multiplier < 1e-31:
+        return ((0, 0), (0, 0))
+    if node == "broadcaster":
+        return ((multiplier, 0), (0, 0))
+    name, type, _ = modules[node]
+    dependencies = [n for (n, t, d) in modules.values() if node in d]
     if type == "flipflop":
-        low_pulse_rates[name] += low_pulse_rate / 2
-        high_pulse_rates[name] += high_pulse_rate / 2
+        frequencies = [get_frequency(d, multiplier / 2) for d in dependencies]
+        low_pulses = [f[0] for f in frequencies]
+        return (low_pulse, high_pulse)
     if type == "conjunction":
-    
+        frequencies = [get_frequency(d, multiplier) for d in dependencies]
+        low_pulses = [f[0] for f in frequencies]
+        high_pulses = [1 - f[1] for f in frequencies]
+        low_pulse = product(low_pulses)
+        high_pulse = 1 - product(high_pulses)
+        return (low_pulse, high_pulse)
+    return (0, 0)
+
+
+for node in modules:
+    print(node, get_frequency(node, 1))
