@@ -33,8 +33,7 @@ for name, type, destinations in modules.values():
         module_states[name] = state
 
 
-def push_button():
-    global button_pushes
+def push_button(nodes_to_monitor=[], i=0):
     signal_queue = [("broadcaster", "low", "button")]
     low_pulses = 0
     high_pulses = 0
@@ -44,6 +43,8 @@ def push_button():
             low_pulses += 1
         else:
             high_pulses += 1
+            if from_name in nodes_to_monitor:
+                print(i, name, signal, from_name)
         if name not in modules:
             continue
         name, type, destinations = modules[name]
@@ -78,34 +79,13 @@ for i in range(1000):
     h += high_pulses
 print(l * h)
 
+# Part 2
+rx_parent = [n for (n, t, d) in modules.values() if "rx" in d][0]
+parent_dependencies = [n for (n, t, d) in modules.values() if rx_parent in d]
 
-def product(l):
-    p = 1
-    for i in l:
-        p *= i
-    return p
+for i in range(100000):
+    push_button(parent_dependencies, i)
 
+# I hate this puzzle so much
 
-def get_frequency(node, multiplier):
-    if multiplier < 1e-31:
-        return ((0, 0), (0, 0))
-    if node == "broadcaster":
-        return ((multiplier, 0), (0, 0))
-    name, type, _ = modules[node]
-    dependencies = [n for (n, t, d) in modules.values() if node in d]
-    if type == "flipflop":
-        frequencies = [get_frequency(d, multiplier / 2) for d in dependencies]
-        low_pulses = [f[0] for f in frequencies]
-        return (low_pulse, high_pulse)
-    if type == "conjunction":
-        frequencies = [get_frequency(d, multiplier) for d in dependencies]
-        low_pulses = [f[0] for f in frequencies]
-        high_pulses = [1 - f[1] for f in frequencies]
-        low_pulse = product(low_pulses)
-        high_pulse = 1 - product(high_pulses)
-        return (low_pulse, high_pulse)
-    return (0, 0)
-
-
-for node in modules:
-    print(node, get_frequency(node, 1))
+print(3917 * 3923 * 3967 * 4021)
