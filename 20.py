@@ -73,3 +73,23 @@ for i in range(1000):
     l += low_pulses
     h += high_pulses
 print(l * h)
+
+low_pulse_rates = {}
+high_pulse_rates = {}
+
+queue = [("broadcaster", 1, 0)]
+while len(queue) > 0:
+    name, low_pulse_rate, high_pulse_rate = queue.pop(0)
+    if low_pulse_rate == 0 and high_pulse_rate == 0:
+        continue
+    name, type, destinations = modules[name]
+    low_pulse_rates[name] = low_pulse_rates.get(name, 0)
+    high_pulse_rates[name] = high_pulse_rates.get(name, 0)
+    if type is None:
+        low_pulse_rates[name] += low_pulse_rate
+        high_pulse_rates[name] += high_pulse_rate
+    if type == "flipflop":
+        low_pulse_rates[name] += low_pulse_rate / 2
+        high_pulse_rates[name] += high_pulse_rate / 2
+    if type == "conjunction":
+    
