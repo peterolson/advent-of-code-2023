@@ -20,12 +20,9 @@ G.add_edges_from(edges)
 
 edges_to_cut = minimum_edge_cut(G)
 
-# get size of the two subgraphs after removing the edge
-
 for edge in edges_to_cut:
     G.remove_edge(*edge)
     
-
 components = [len(c) for c in connected_components(G)]
 product = 1
 for c in components:
