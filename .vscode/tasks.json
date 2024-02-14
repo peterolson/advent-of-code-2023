@@ -1,0 +1,16 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Automatically install VSCode addons",
+            "type": "shell",
+            "command": "cat ./.vscode/extensions.json | jq -r .recommendations[] | xargs -L 1 code --install-extension",
+            "runOptions": {
+                "runOn": "folderOpen"
+            },
+            "presentation": {
+                "reveal": "silent"
+            }
+        }
+    ]
+}
