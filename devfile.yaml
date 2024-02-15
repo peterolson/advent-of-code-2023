@@ -30,3 +30,12 @@ components:
   - name: docker-store
     volume:
       size: 16Gi
+commands:
+  - id: install
+    exec:
+      component: aws-runtime
+      commandLine: pip install -r requirements.txt
+      workingDir: /projects/advent-of-code-2023
+events:
+  postStart:
+    - install
