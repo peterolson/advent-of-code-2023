@@ -1,6 +1,6 @@
 schemaVersion: 2.0.0
 metadata:
-  name: al2
+  name: test-python
 components:
   - name: test
     container:
@@ -12,18 +12,13 @@ commands:
   - id: setupscript
     exec:
       component: test
-      commandLine: "chmod +x script.sh"
+      commandLine: "chmod +x setup.sh"
       workingDir: /projects/devfiles
   - id: executescript
     exec:
       component: test
-      commandLine: "/projects/devfiles/script.sh"
-  - id: yumupdate
-    exec:
-      component: test
-      commandLine: "yum -y update --security"
+      commandLine: "/projects/devfiles/setup.sh"
 events:
   postStart:
     - setupscript
     - executescript
-    - yumupdate
