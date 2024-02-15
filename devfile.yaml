@@ -9,7 +9,7 @@ metadata:
 components:
   - name: aws-runtime
     container:
-      image: python:3.12.2-slim-bookworm
+      image: public.ecr.aws/aws-mde/universal-image:latest
       mountSources: true
       volumeMounts:
         - name: docker-store
