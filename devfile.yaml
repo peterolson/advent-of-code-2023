@@ -9,7 +9,7 @@ metadata:
 components:
   - name: aws-runtime
     container:
-      image: public.ecr.aws/aws-mde/universal-image:latest
+      image: python:3.12.2-slim-bookworm
       mountSources: true
       volumeMounts:
         - name: docker-store
@@ -17,6 +17,15 @@ components:
       env:
         - name: TEST_ENV
           value: "I am testing the environment variable!"
+        - name: PYTHON_VERSION
+          value: "3.12.2 ha ha ha"
   - name: docker-store
     volume:
       size: 16Gi
+commands:
+  - id: startup
+    exec:
+      commandLine: startup.sh
+events:
+  postStart:
+    - install
