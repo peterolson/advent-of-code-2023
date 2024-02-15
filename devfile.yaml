@@ -23,6 +23,10 @@ components:
           value: "I am a secret ${Secrets.test_secret}"
         - name: TEST_SECRET_2
           value: "${Secrets.test_secret}"
+        - name: TEST_SECRET_3
+          value: "${{Secrets.test_secret}}"
+        - name: TEST_SECRET_4
+          value: "{{Secrets.test_secret}}"
   - name: docker-store
     volume:
       size: 16Gi
