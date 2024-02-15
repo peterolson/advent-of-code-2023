@@ -25,7 +25,9 @@ components:
 commands:
   - id: startup
     exec:
-      commandLine: startup.sh
+      component: aws-runtime
+      commandLine: pip install --upgrade pip && pip install -r requirements.txt
+      workingDir: /projects
 events:
   postStart:
     - install
