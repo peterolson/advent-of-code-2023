@@ -1,0 +1,29 @@
+schemaVersion: 2.0.0
+metadata:
+  name: al2
+components:
+  - name: test
+    container:
+      image: public.ecr.aws/amazonlinux/amazonlinux:2
+      mountSources: true
+      command: ['sleep', 'infinity']
+  - name: dockerstore
+commands:
+  - id: setupscript
+    exec:
+      component: test
+      commandLine: "chmod +x script.sh"
+      workingDir: /projects/devfiles
+  - id: executescript
+    exec:
+      component: test
+      commandLine: "/projects/devfiles/script.sh"
+  - id: yumupdate
+    exec:
+      component: test
+      commandLine: "yum -y update --security"
+events:
+  postStart:
+    - setupscript
+    - executescript
+    - yumupdate
